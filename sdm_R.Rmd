@@ -15,6 +15,9 @@ header-includes:
   - \usepackage{float}
   - \usepackage{mdframed}
   - \setlength{\parskip}{1em}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage[table,xcdraw]{xcolor} 
 ---
 
 ```{r setup, include=FALSE}
@@ -35,7 +38,7 @@ This book chapter demonstrates the entire workflow of species distribution model
 
 The 'sdm' R package is a comprehensive framework that provides a set of user-friendly functions for implementing the entire species distribution modelling workflow to develop data-driven SDMs, begins with providing data for both species (response or dependent variable) and environment (predictor or explanatory variables; also called covariates). The workflow consists of three major steps to build SDMs including data preparation, modelling, and prediction. The sdm package offers a user-friendly function for each step in the workflow with arguments controlling the tasks given a user’s inputs.
 
-(a) \uline{\textit{Data preparation}}: involves controlling and integrating species and environmental data, identifying and cleaning issues with data such as mismatch in coordinate reference systems, duplication of records, missing values, and testing collinearity among predictor variables. Different types of species data are supported in the sdm package including presence-only, presence-absence, and abundance. In case of presence-only, pseudo-absence or background records can be generated at this stage. The main function for this stage in the sdm package is \texttt{sdmData}  which supports both tabular (e.g., \texttt{data.frame}) and spatial data formats, and can do all the above-mentioned tasks for cleaning and preparing data.
+(a) \uline{\textit{Data preparation}}: involves controlling and integrating species and environmental data, identifying and cleaning issues with data such as mismatch in coordinate reference systems, duplication of records, missing values, and testing collinearity among predictor variables. Different types of species data are supported in the sdm package including **presence-only**, **presence-absence**, and **abundance** data. Since presence-only is the most widely used data type, a case study in this book chapter is demonstrated based on using this data type. In case of presence-only, pseudo-absence or background records can be generated at this stage. The main function for this stage in the sdm package is \texttt{sdmData}  which supports both tabular (e.g., \texttt{data.frame}) and spatial data formats, and can do all the above-mentioned tasks for cleaning and preparing data.
 
 (b) \uline{\textit{Modelling}}: utilizes various (20+) statistical and machine learning algorithms to construct SDMs based on the prepared clean data in the previous step (a). Once the models are built (also called training of the models), they undergo rigorous evaluation to assess their performance and predictive accuracy. This step often includes resampling procedure for dividing data into training and test partitions using multiple methods such as sub-sampling, cross-validation, and bootstrapping (Naimi and Araújo, 2016), which employ widely used evaluation metrics, like the Area Under the Curve (AUC) and True Skill Statistic (TSS), to ensure robust model validation (Allouche et al., 2006; A H Fielding and Bell, 1997). A single function, sdm, in the package integrates all modelling and evaluation tasks defined in this phase that can be simultaneously applied for multiple species, multiple modelling methods, and multiple replications of data.
 
@@ -72,7 +75,9 @@ The solution to conduct the study has been provided following the main steps in 
 
 (iii) \uline{Developing models using the sdm R package}: The main workflow in the sdm package [@naimi_sdm_2016] to develop and evaluate SDMs are demonstrated.
 
-(iv) \uline{Assess range shift in response to climate change}: We predict the current distribution of the species, and project its distribution into a future climatic scenario (for the year 2100), and assess the magnitude and distribution of changes, and quantitatively measure range shifts due to climate change.
+(iv) \uline{Predict/Project the map of habitat suitability in current and future times}: We predict the current distribution of the species (habitat suitability), and project its distribution into a future climatic scenario (for the year 2100).
+
+(v) \uline{Assess range shift in response to climate change}: Given the habitat suitability maps in both the current and future times, we can assess the magnitude and distribution of changes, and quantitatively measure range shifts due to climate change.
  
 
 
@@ -175,26 +180,6 @@ points(sp,col='red')
 
 
 ```
-
-While statistical methods can be employed to identify outliers of the species data, a visual inspection of the map suggests that the points in North America may be outliers. This suspicion can be further validated by comparing these points with the species' range map provided by the IUCN. Therefore, we can exclude the outlier records.
-
-\uline{\textit{Selecting study area}}: Although the purpose of our case study is to generate potential distribution of species **globally**, we may select a realistic study area (an area which is potentially accessible for the species) where we draw the background records and train SDMs. We may use a biogeographical map to overlap presence records and select the polygons intersected which species presence locations. Alternatively, we can approximately specify the study area by choosing the upper left and lower right coordinates, and extract the minimum and maximum x and y coordinates to make an extent object using the terra package.
-
-```{r}
-library(terra)
-
-bnd <- ext(c(40,140,2,60)) # spatial extent with c(X_min, X_max, Y_min, Y_max)
-
-
-plot(wld)
-
-points(sp,col='red')
-
-plot(bnd,add=T,border='blue')
-
-
-```
-
 
 \uline{\textit{Downloading Climate Data}}:
 
@@ -302,7 +287,28 @@ plot(biof[[12]],col=cl(200),
 
 ### (ii) Data preparation
 
-After downloading data, we need to take some steps to prepare data for modelling. At this section, first the climate data for the current time are cropped within the defined extent above. Then, the issue of multi-collinearity is checked among the predictor variables.
+After downloading data, we need to take some steps to prepare data for modelling. 
+
+While statistical methods can be employed to identify outliers of the species data, a visual inspection of the map with species locations suggests that the points in North America may be outliers. This suspicion can be further validated by comparing these points with the species' range map provided by the IUCN. Therefore, we can exclude the outlier records. However, if the study area to train the model is selected and the outliers are located outside of the study area, the outliers will not be considered in the modelling procedure (i.e., no need to exclude them).
+
+
+\uline{\textit{Selecting study area}}: 
+
+Although the purpose of our case study is to generate **global** potential distribution of species, we may select a realistic study area which can be an area potentially accessible to the species. Since the background records are generated within the study area, it is important to select a reasonable area to train SDMs. We may use a biogeographical map to overlap presence records and select the polygons intersected which species presence locations and conider them as the study area. Alternatively, we can approximately specify the area by choosing its upper left and lower right which give us the minimum and maximum x and y coordinates to make an extent object using the terra package.
+
+```{r}
+library(terra)
+
+plot(wld)
+
+bnd <- ext(c(60,120,10,60)) # spatial extent with c(X_min, X_max, Y_min, Y_max)
+
+points(sp,col='red')
+
+plot(bnd,add=T,border='blue')
+
+```
+
 
 \uline{\textit{Cropping Climate Data to the extent defined as the study area}}:
 
@@ -328,7 +334,7 @@ points(sp,col='red')
 
 \uline{\textit{Multi-collinearity}}:
 
-When we have two or more numerical predictor variables that are strongly correlated, the data are subjected to the issue of multi-collinearity (also called collinearity) [@Dormann2013]. Some modelling methods, such as GLMs, may be sensitive to the collinearity issue as their parameterisation can be affected. Even if a modelling method is not sensitive, excluding the collinear variables is a good practice given the parsimony rule to avoid redundant information in the model that makes it un-necessarily complex.
+When we have two or more numerical predictor variables that are strongly correlated, the data are subjected to the issue of multi-collinearity (also called collinearity) [@Dormann2013]. Some modelling methods, such as GLMs, may be sensitive to the collinearity issue as their parameterisation can be affected. Even if a modelling method is not sensitive, excluding the collinear variables is a good practice given the parsimony rule to avoid redundant information in the model which makes it un-necessarily complex.
 
 Several approaches are available to deal with collinearity issue. One approach is to transform the environmental variables into a new set of variables using Principle Component Analysis (PCA), an ordination method for reducing data dimensions and generate new, uncorrelated variables. This can be done using the `pca` function, or by specifying the `pca` term in the formula in the `sdmData` function.
 
@@ -374,12 +380,19 @@ bio
 
 ### (iii) Developing models using the sdm R package: 
 
-Now, we have both species (response) and climate (predictors) variables ready to implement the modelling workflow. In the sdm package, two user-friendly functions should be used to develop the models. First, an sdmdata object should be created using the `sdmData` function, then, models are trained and evaluated using the `sdm` function.  The `sdmData` function requires both species and predictor variables and several issues (e.g., duplications, missing values) and inconsistencies (e.g., mis-match in coordinate reference systems) are checked automatically by this function. It has a formula interface (check the following box) which provides flexibility for a user to control data, and do several tasks.
+Now, we have both species (response) and climate (predictors) variables ready to implement the modelling workflow using the sdm package. The package can be installed normally from CRAN or from Github using: `devtools::install_github('babaknaimi/sdm'))`. **To get all modelling methods available for training SDMs, some additional packages also need to be installed. You may use the `installAll()` function one time after installing sdm to get all required packages installed on your machine.**
+
+In the sdm package, two user-friendly functions should be used to develop the models. First, an sdmdata object should be created using the `sdmData` function, then, models are trained and evaluated using the `sdm` function.
+
+The usage of the function:
+
+`sdmData(formula,train,predictors,test,bg,filename,crs,impute,metadata,...)`
 
 
+The `sdmData` function requires both species and predictor variables and several issues with data (e.g., duplications, missing values) and inconsistencies (e.g., mis-match in coordinate reference systems) are checked and fixed by this function. It has a `formula` interface (check the following box) which provides flexibility for users to control data structure and formats, and apply several functions on data.
 
 
-\begin{mdframed}[backgroundcolor=gray!10, linecolor=black!75, linewidth=2pt, roundcorner=5pt, shadow=true,frametitle={\textbf{Formula interface}}]
+\begin{mdframed}[backgroundcolor=gray!10, linecolor=black!75, linewidth=2pt, roundcorner=5pt, shadow=true,frametitle={\textbf{BOX 1: \uline{Formula interface in the sdmData function}}}]
 
 The "formula" interface in R is a powerful and versatile tool that simplifies the specification of statistical models. Central to many modeling functions in R, the formula interface allows users to define the relationship between the dependent and independent variables in a clear and concise manner. This interface uses a symbolic syntax to represent models, making it intuitive and accessible for users to specify complex models without delving into the underlying mathematical details.
 
@@ -455,27 +468,279 @@ Or you may specify the minimum percentage of variability explained by the select
 
 By using the formula interface, users can leverage R's extensive statistical modeling capabilities with ease. This interface not only promotes consistency across different modeling functions but also enhances readability and reproducibility of the code. As such, the formula interface is an essential feature of R that empowers users to build, analyze, and interpret a wide array of statistical models efficiently.
 
+\end{mdframed}
+
+
+The sdmdata object, generated by the `sdmData` function, is like a database containing all species and environmental records as well as additional information (spatial coordinates, temporal dimension, grouping factors, coordinate reference system, metadata, etc.).
+
+Let's create the `sdmdata` object given the species data (`SpatVector` object: `sp`) and the climate variables (`SpatRaster` object: `bioc`). In the species data (`sp`), we had the presence-only values (1) assigned to a column named `species`. 
+
+\uline{\textit{Backgrounds (pseudo-absences)}}: Since the species dataset is presence-only, we need to generate background (pseudo-absence) records. Several methods are available to generate backgrounds (you may check the help page of the `background` function in the sdm package). For this purpose, we use the method of `gRandom` which generates background randomly in the geographic space. The setting to generate background records can be provided through the `bg` argument to the  `sdmData` function using a list. In addition to the method, `n` (the number of background records), and some optional arguments can be provided (e.g., `bias` which is a raster file can be used for a target-based background generation). 
+
+```{r}
+library(sdm)
+
+## the first step in the sdm package is to create the data object:
+# ---> 500 background records will be generated using "gRandom":
+d <- sdmData(species~.,train=sp,predictors=bioc,bg=list(n=500,method='gRandom'))
+
+# you may get a summary from the created object by executing the object:
+
+d
+
+```
+
+\uline{\textit{Modelling and Evaluation}}: After creating the data object (`sdmdata`), the `sdm` function can be used to train and evaluate multiple models in parallel. 20+ modelling methods are available in the package. The models can be extended by users through using the `add` function. The list of existing methods can be checked using getmethodNames function:
+
+
+```{r}
+getmethodNames(alt=F)
+```
+
+Usage of `sdm`:
+
+`sdm(formula, data, methods,...)`
+
+In the sdm function, `formula` (to specify the structure of the model), `data` (the output of `sdmData`), and `methods` (to specify the names of modelling methods) are the minimum inputs to get the function works. Some additional inputs can be provided to specify settings for the `replication` methods which split data to training and test partitions for evaluating the models. The following sub-section provides some details about model evaluation:
+
+\uline{\textit{Replication}}: To evaluate the models, if an independent dataset is available, thay can be used to test the performance of models. If that is the case, the independent test data can be provided to the `sdmData` function. However, such independent data are not available in most situations. Therefore, an alternative solution might be used which is to split the data into two partitions using a re-sampling method. Several re-sampling methods are available in the sdm package including "sub-sampling" (uses a random sampling without replacement to divide data given the percentage specified by a user; for example, if `test.percent` = 30 is specified by a user, 30% of records are randomly selected to be used as test data and the rest for training the models), "bootstrapping" (uses a random sampling with replacement; for this method, a random sample with replacement and with the same size as the original data is drawn from the records which are used for training the models, and the records that are not selected in the sample are used as the test data), and "cross-validation" (divide data into n folds/partitions [`cv.fold` specified by a user] at the beginning of the procedure and the models are trained n times and every time one of the folds is selected as the test data). A user can specify one or more of these methods through the `replication` argument, and the procedure can be repeated multiple times if a user add the `n` argument with the number of replications.
+
+
+Here is an example of using the sdm function where we chose 5 modelling method, also used sub-sampling with 30% of data for test dataset, and repeated the procedure 3 times:
+
+
+
+```{r}
+## second step: to train and evaluate the models:
+
+#----> 5 modelling methods are used: 
+# =======>> glmp: polynomial generalised linear model; 
+# =======>> brt: Boosted Regression Trees; 
+# =======>> rf: Random Foress; 
+# =======>> maxent: Maximum Entropy; 
+# =======>> svm: Support Vector Machine; 
+
+#----> Replication method: sub-sampling (with 30 % of test data; repeats 3 times)
+
+m <- sdm(species~., d, methods = c('glm','brt','rf','maxent','svm'),
+         replication='sub', test.p=30, n = 3)
+
+
+# to see a summary of the modelling outputs, you may check the object:
+
+m
+
+
+```
+
+As you can see above, in the summary information provided from the `sdmModels` object, 3 models were trained for each modelling method (15 models in total), and they were evaluated using multiple accuracy metrics (e.g., AUC, TSS). Mean values of these metrics can provide a quick way to compare the performance of different methods.
+
+There is a user-friendly and interactive way to explore part of the results available within the sdmModels object through using the `gui` function. This function opens a graphical user interface with different parts (windows/tabs) which allows a user to explore the results (evaluation, variable importance, etc.). You may simply use the following line of code to use the function:
+
+`gui(m)`
+
+\
+\
+\
+\definecolor{headercolor}{rgb}{0.2, 0.6, 0.8}  % Define a custom color for the header
+\definecolor{rowcolor}{rgb}{0.2, 0.5, 0.2}     % Define a custom color for the row names
+
+
+\begin{mdframed}[backgroundcolor=gray!10, linecolor=black!75, linewidth=2pt, roundcorner=5pt, shadow=true,frametitle={\textbf{BOX 2: \uline{Model evaluations for SDMs}}}]
+
+Evaluating the performance of models is a crucial step in species distribution modeling (SDM) to ensure the accuracy and reliability of predictions. Several evaluation metrics are commonly used to assess how well a model predicts the occurrence of species based on known data. Here are some of the most widely used methods:
+
+\uline{\textit{Area Under the Receiver Operating Characteristic Curve (AUC)}}: 
+
+
+
+
+Confusion Matrix and Threshold-Based Metrics
+
+The confusion matrix is a tool used to evaluate the performance of a classification model by comparing the observed values with the predicted values. The matrix is composed of four key components:
+
+
+\begin{tabular}{|>{\columncolor{rowcolor}}c|>{\columncolor{headercolor}}c|>{\columncolor{headercolor}}c|}
+\hline
+\rowcolor{headercolor!80}                 & \textcolor{white}{\textbf{Predicted Presence}} & \textcolor{white}{\textbf{Predicted Absence}} \\ \hline
+\textcolor{white}{\textbf{Observed Presence}}  & True Positives (TP)  & False Negatives (FN) \\ \hline
+\textcolor{white}{\textbf{Observed Absence}}   & False Positives (FP) & True Negatives (TN)  \\ \hline
+\end{tabular}
+
+
+ Description of the Metrics:
+
+1. **True Positives (TP)**: The number of observations correctly predicted as presence by the model (i.e., the model correctly identifies the presence of the species).
+   
+2. **False Negatives (FN)**: The number of observations where the model incorrectly predicts absence, while the species is actually present (i.e., missed presences).
+
+3. **False Positives (FP)**: The number of observations where the model incorrectly predicts presence, while the species is actually absent (i.e., false alarms).
+
+4. **True Negatives (TN)**: The number of observations correctly predicted as absence by the model (i.e., the model correctly identifies where the species is absent).
+
+
+
+
+Key Metrics Derived from the Confusion Matrix:
+
+- **Accuracy**: 
+  \[
+  \text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN}
+  \]
+  Accuracy measures the overall correctness of the model by calculating the proportion of correctly classified instances (both presences and absences) out of all predictions.
+
+- **Sensitivity (True Positive Rate / Recall)**:
+  \[
+  \text{Sensitivity} = \frac{TP}{TP + FN}
+  \]
+  Sensitivity evaluates how well the model identifies actual presences (true positives). A higher sensitivity indicates fewer missed presences.
+
+- **Specificity (True Negative Rate)**:
+  \[
+  \text{Specificity} = \frac{TN}{TN + FP}
+  \]
+  Specificity assesses how well the model identifies actual absences (true negatives). A higher specificity means fewer false positives (wrongly predicted presences).
+
+- **Precision (Positive Predictive Value)**:
+  \[
+  \text{Precision} = \frac{TP}{TP + FP}
+  \]
+  Precision measures the proportion of predicted presences that are true presences. A higher precision means that when the model predicts presence, it is more likely to be correct.
+
+- **F1 Score**:
+  \[
+  \text{F1 Score} = 2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}
+  \]
+  The F1 score is the harmonic mean of precision and recall, giving a balanced measure of the model's accuracy when there is a trade-off between false positives and false negatives.
+
+
 
 
 \end{mdframed}
 
+### (iv) Predict/Project the map of habitat suitability in current and future times
 
-## Data Preparation:
+After the models were trained and evaluated successfully, we can now use them to predict the probability of occurrence (it may be interpreted as the degree of habitat suitability) for each pixel across the study area. Here, the aim is to assess the geographic distribution of the species globally, therefore, we use the non-cropped predictor variables (`bio`) to predict the values in the current time:
 
-
-# Species distribution modelling (SDM) workflow using the sdm R package
-
-Here, let's implement the SDM workflow following the main steps available in the sdm R package:
-
-## (i) Create the `sdmdata` object:
-The first step to to create a data object which is like a database containing all species and environmental records as well as additional information (spatial coordinates, temporal dimension, grouping factors, coordinate reference system, metadata, etc.) corresponding to the main variables. The `sdmData` function can be used to create this data object. The function controls some issues with records including duplication, missing values. The collinearity issue can also be handled with this function if it was not handled priorly (using the steps provided in the previous sections).
-
-Let's create the `sdmdata` object given the species data (`sp` SpatVector object) and the climate variables (`bioc` SpatRaster object):
 
 ```{r}
+## Predict habitat suitability of Snow leopard in the current time:
 
-#d <- sdmData()
+p <- predict(m, bioc)
+
+# since we had 15 models in the `m` object, `p` is a SpatRaster with 15 layers 
+# corresponding to the 15 models:
+
+p
+
+# We have 5 modelling methods, and 3 models for each method (15 in total),
+# the first 3 layers are for the first method ("glmp"), the secord 3 (4, 5, and 6)
+# are related to the second method ("brt"), and so on.
+
+# let's visualise one of the outputs for each method:
+
+# appropriate color schemes:
+cl <- colorRampPalette(c('gray','orange','yellow','green','blue')) 
+
+plot(p[[c(1,4,7,10,13)]],col=cl(200))
 
 
 ```
+
+\uline{\textit{Ensemble forecasting}}: Employing multiple modelling methods for species distribution modelling which is usually applied to several replications of data (e.g., in the example above, we produced 15 models), often results in varying predictions. While these models may all perform well according to evaluation metrics (e.g., AUC), their predictions can still differ significantly. These variations in outcomes of models are referred to model-based uncertainty, which is one of the key sources of uncertainty affecting SDMs. 
+
+To address this uncertainty, an effective approach is  ensemble forecasting, where the predictions from multiple models are combined into a single, consensus prediction [@araujo_ensemble_2007]. Ensemble forecasting helps to smooth out the variability in individual models, providing a more robust and reliable prediction of species distribution. According to Araújo and New (2007), ensemble methods can improve the accuracy and reliability of SDMs by leveraging the strengths of different models while minimizing their individual weaknesses.
+
+\uline{\textit{Ensemble forecasting methods}}: In the sdm package, the `ensemble` function can be used for generating the consensus prediction that supports multiple methods for combining the predictions. Several approaches are available to combine predictions from multiple models in the `ensemble` function (the method is specified within a list passed through the `setting` argument:
+
+- **Mean** (simple averaging): This is the simplest method, where the predictions from all models are averaged to produce the final consensus prediction. Each model contributes equally to the final result. To use this method, `method = 'mean'` or `method = 'unweighted'` can be used in the `setting` argument of the `ensemble` function. 
+
+
+- **Weighted Mean**: In this method, models with better performance (as determined by evaluation metrics such as AUC or TSS) are given more weight in the final prediction. For example, models that perform better based on AUC would contribute more significantly to the final ensemble prediction than models with lower AUC scores. Examples of settings in the `ensemble` function include: `setting = list(method = 'weighted', stat = 'auc')` which uses AUC values as weight; OR `setting = list(method = 'weighted', stat = 'tss', opt=2)` which uses TSS values as weight. Since TSS is a threshold-based metric, the `opt` argument is also added which specifies which threshold optimisation method should be used to select the best threshold for calculating TSS. 15 optimisation methods are available in the sdm package (check the help page of the `evaluates` function), and `opt = 2` refers to the second method that selects threshold under which [`sensitivity` + `specificity`] is maximized (i.e., `max[se+sp]`).  
+
+- **Median**: This method takes the median of predictions from all models. To use this method (`method = 'median'`). 
+
+- **Thresholding and stacking**: This method involves thresholding predictions to determine areas of presence or absence given the best threshold for each model specified using a threshold optimisation method (the `opt` argument). The predicted presence-absence values from multiple models are stacked and averaged (`method = 'pa'`). Example: `setting = list(method = 'pa', opt=2)` 
+
+- **Two-step averaging**: When multiple predictions are generated for each modelling method (from multiple data replications), the averaging of predictions can be done in two steps, across replications for each modelling method and then across modelling methods. The available two-step methods include `mean-weighted`, `mean-unweighted`, `median-weighted` and `median-unweighted`. For instance, using the `method = 'mean-weighted'` in the setting argument first takes the mean of different replications of each modelling methods, then they are combined through using a weighted-mean function.
+
+- **Assess variability in predictions**: In addition to generating a consensus prediction, several methods are avaialble to explore the variability of predictions for each location. These methods include coefficient of variation (`method = 'cv'`), standard deviation (`method = 'stdev'`), confidence interval (`method = 'ci'`; this generates the range of confidence interval which is "upper range - lower range"), and uncertainty (`method = 'uncertainty'`). The uncertainty method can characterise model-based uncertainty or inconsistency among predictions of different models. An entropy metric is used to characterise uncertainty, ranging between 0 and 1. The value of 1 at a certain location refers to maximum inconsistency which is the case when half of the models predict 'presence' for the location and the other half predict 'absence'.
+
+The above methods mentioned methods can be employed together at the same time.
+
+Following is examples of how to generate an ensemble prediction using the `ensemble()` function in the sdm package. Please **note** that the `ensemble` function \uline{first calls the `predict` function to generate predictions}, and then use an ensemble method to combine them into a consensus map. However, if the predictions are generated beforehand, the output of the predict function can be introduced as the second argument to the ensemble function (in our case, `p`), otherwise, the predictors object (in our case, `bioc`) should be used as the second argument:
+
+
+```{r}
+## Ensemble:
+#----> first argument: the model (output of the sdm function)
+#---->  second argument: either the output of the predict function (if available)
+#---------------------- OR the predictors object (bioc; )
+#----> third argument (setting): a list with settings for ensemble procedure
+
+### We fitst try 3 methods and compare them in a plot:
+
+## (i) Weighted-mean using values of AUC as weights
+en1 <- ensemble(m, p, setting = list(method='weighted', stat= 'auc'))
+
+#----
+## (ii) Weighted-mean using values of TSS as weights 
+# opt=2 refers to the threshold obtained using max[Sensitivity + Specificity]
+
+en2 <- ensemble(m, p, setting = list(method='weighted', stat= 'tss', opt=2))
+
+## (iii) PA: thresholding and stacking:
+en3 <- ensemble(m, p, setting = list(method='pa', opt=2))
+
+#------ 
+## Visualising the outputs of 3 different ensembles:
+
+
+en <- c(en1,en2,en3) # 3 objects stacked in a single object
+
+plot(en, col=cl(200),
+     main=c('Weighted-Mean (AUC)','Weighted-Mean (TSS)','Thresholding (PA)'))
+
+
+#-------------------------------
+## Assessing variability among predictions:
+
+en4 <- ensemble(m, p, setting = list(method=c('mean','ci'), opt=2))
+
+plot(en4, col=cl(200),main=c('Mean','Range of Confidence-interval'))
+
+## to assess the upper and lower limits of confidence intervals:
+ci.lower <- en4[[1]] - (en4[[2]] / 2)
+ci.upper <- en4[[1]] + (en4[[2]] / 2)
+
+plot(c(ci.lower,ci.upper),main=c('CI.lower (alpha = 0.05)','CI.upper (alpha = 0.05)'))
+
+#----------
+## Uncertainty
+en5 <- ensemble(m, p, setting = list(method='uncertainty', opt=2))
+
+plot(en5, main='Model-based Uncertainty')
+
+#-----------
+
+
+```
+
+
+As you can see above, a single map is generated by combining the 15 predicted rasters (output of the predict function) using the ensemble method specified in the setting. There are other optional arguments avaialable to control the ensemble procedure including:
+
+- `id`: By default, predictions from all models are contributing to generate the consensus map unless a user specify the `id` of certain predictions (based on their `modelID`s). For example, adding `id = 1:10` to the `setting` list, only uses the first 10 predictions in the above example.
+
+- `expr`: An expression can be specified by a user to control or limit which predictions should contribute into generating the consensus map. For example, using `expr = auc > 0.7` uses the specified condition to only include well-performing models (those with AUC > 0.7) contributing to the ensemble procedure.
+
+- `power`: This argument is used to change weights by calculating `weights = weights ^ power`. A value of greater than 1, gives more emphasise on better performing models.
+
+- Check the help page of the `ensemble` function in the `sdm` package for the other arguments and more details about the function.
+
+
+### (v) Assessing range shifts of the species in response to climate change: 
+
+
+
+
 
