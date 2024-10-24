@@ -1,11 +1,18 @@
 ---
 title: "The sdm R package for species distribution modelling"
-author: "Babak Naimi, Elham Ebrahimi, Miguel B. Araujo"
-date: "2024-06-27"
+author: |
+  Babak Naimi\textsuperscript{1*}, Elham Ebrahimi\textsuperscript{2}, Miguel B. Araújo\textsuperscript{3,4}
+affiliation: |
+  \textsuperscript{1}Quantitative Biodiversity Dynamics (QBD), Department of Biology, University of Utrecht, Padualaan 8, Utrecht, 3584 CH, The Netherlands \\
+  \textsuperscript{2}Wildlife Ecology and Conservation, Department of Environmental Sciences, Wageningen University 6708 PB, Wageningen, The Netherlands \\
+  \textsuperscript{3}Department of Biogeography and Global Change, National Museum of Natural Sciences, CSIC, Madrid, Spain \\
+  \textsuperscript{4}Rui Nabeiro Biodiversity Chair, MED Institute, University of Évora, Évora, Portugal \\
+  \textsuperscript{*}Corresponding author: \texttt{naimi.b@gmail.com}  
+
+
 output: 
   pdf_document:
     latex_engine: xelatex
-
 bibliography: citations.bib
 header-includes:
   - \usepackage{fontspec}
@@ -17,8 +24,23 @@ header-includes:
   - \setlength{\parskip}{1em}
   - \usepackage{longtable}
   - \usepackage{array}
-  - \usepackage[table,xcdraw]{xcolor} 
+  - \usepackage[table,xcdraw]{xcolor}
+  - \usepackage{fancyhdr}
+  - \renewcommand{\thefootnote}{\fnsymbol{footnote}}
 ---
+
+\begin{center}
+    \textsuperscript{1}Quantitative Biodiversity Dynamics (QBD), Department of Biology, University of Utrecht, Padualaan 8, Utrecht, 3584 CH, The Netherlands \\
+    \textsuperscript{2}Wildlife Ecology and Conservation, Department of Environmental Sciences, Wageningen University 6708 PB, Wageningen, The Netherlands \\
+    \textsuperscript{3}Department of Biogeography and Global Change, National Museum of Natural Sciences, CSIC, Madrid, Spain \\
+    \textsuperscript{4}Rui Nabeiro Biodiversity Chair, MED Institute, University of Évora, Évora, Portugal \\
+    \vspace{0.3cm}
+    \textsuperscript{*}Corresponding author: \texttt{naimi.b@gmail.com}
+\end{center}
+
+
+\maketitle
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -542,77 +564,139 @@ There is a user-friendly and interactive way to explore part of the results avai
 \
 \
 \
-\definecolor{headercolor}{rgb}{0.2, 0.6, 0.8}  % Define a custom color for the header
-\definecolor{rowcolor}{rgb}{0.2, 0.5, 0.2}     % Define a custom color for the row names
 
 
 \begin{mdframed}[backgroundcolor=gray!10, linecolor=black!75, linewidth=2pt, roundcorner=5pt, shadow=true,frametitle={\textbf{BOX 2: \uline{Model evaluations for SDMs}}}]
 
 Evaluating the performance of models is a crucial step in species distribution modeling (SDM) to ensure the accuracy and reliability of predictions. Several evaluation metrics are commonly used to assess how well a model predicts the occurrence of species based on known data. Here are some of the most widely used methods:
 
-\uline{\textit{Area Under the Receiver Operating Characteristic Curve (AUC)}}: 
+
+\textbf{\large Confusion Matrix and Threshold-Based Metrics}
+
+The confusion matrix is a tool used to evaluate the performance of a models when the response variable is categorical (or classes such as presence and absence). The confusion matric tool allows to compare the observed values (presence/absences) with the predicted presence and absences. Since SDMs are usually generating probability of occurrences (or habitat suitability values) rather than presence/absence values, a threshold is needed to first convert the predicted probabilities to presence/absences, then make the confusion matrix and calculate the accuracy metrics. Therefore, the metrics generated based on a confusion matrix is also called \textbf{threshold-based} metrics. The matrix is composed of four key components:
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{cmx.png}
+    \caption{Confusion Matrix: compares observed presence and absence records with predicted presence and absence records to measure multiple metrics representing accuracy of a model (e.g., sensitivity, specificity) }
+    \label{fig:Fig3}
+\end{figure}
 
 
 
-
-Confusion Matrix and Threshold-Based Metrics
-
-The confusion matrix is a tool used to evaluate the performance of a classification model by comparing the observed values with the predicted values. The matrix is composed of four key components:
+\textbf{Description of the Metrics:}
 
 
-\begin{tabular}{|>{\columncolor{rowcolor}}c|>{\columncolor{headercolor}}c|>{\columncolor{headercolor}}c|}
-\hline
-\rowcolor{headercolor!80}                 & \textcolor{white}{\textbf{Predicted Presence}} & \textcolor{white}{\textbf{Predicted Absence}} \\ \hline
-\textcolor{white}{\textbf{Observed Presence}}  & True Positives (TP)  & False Negatives (FN) \\ \hline
-\textcolor{white}{\textbf{Observed Absence}}   & False Positives (FP) & True Negatives (TN)  \\ \hline
-\end{tabular}
+- \uline{\textit{True Positives (TP)}}: The number of observed presences that are correctly predicted as presence by the model (i.e., the model correctly identifies the presence of the species).
 
-
- Description of the Metrics:
-
-1. **True Positives (TP)**: The number of observations correctly predicted as presence by the model (i.e., the model correctly identifies the presence of the species).
+- \uline{\textit{True Negatives (TN)}}: The number of observed absences that are correctly predicted as absence by the model (i.e., the model correctly identifies where the species is absent).
    
-2. **False Negatives (FN)**: The number of observations where the model incorrectly predicts absence, while the species is actually present (i.e., missed presences).
+- \uline{\textit{False Negatives (FN)}}: The number of observed presences that are incorrectly predicted as absence (i.e., missed presences).
 
-3. **False Positives (FP)**: The number of observations where the model incorrectly predicts presence, while the species is actually absent (i.e., false alarms).
-
-4. **True Negatives (TN)**: The number of observations correctly predicted as absence by the model (i.e., the model correctly identifies where the species is absent).
+- \uline{\textit{False Positives (FP)}}: The number of absences where the model incorrectly predicts presence.
 
 
+\textbf{Key Metrics Derived from the Confusion Matrix}:
 
-
-Key Metrics Derived from the Confusion Matrix:
-
-- **Accuracy**: 
+- \uline{\textit{Accuracy}}: 
   \[
   \text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN}
   \]
-  Accuracy measures the overall correctness of the model by calculating the proportion of correctly classified instances (both presences and absences) out of all predictions.
+\textbf{Accuracy} measures the overall correctness of the model by calculating the proportion of correctly classified instances (both presences and absences) out of all predictions.
 
-- **Sensitivity (True Positive Rate / Recall)**:
+- \uline{\textit{Sensitivity (True Positive Rate or Recall)}}:
   \[
   \text{Sensitivity} = \frac{TP}{TP + FN}
   \]
-  Sensitivity evaluates how well the model identifies actual presences (true positives). A higher sensitivity indicates fewer missed presences.
+\textbf{Sensitivity} evaluates how well the model identifies actual presences (true positives). A higher sensitivity indicates fewer missed presences.
 
-- **Specificity (True Negative Rate)**:
+- \uline{\textit{Specificity (True Negative Rate)}}:
   \[
   \text{Specificity} = \frac{TN}{TN + FP}
   \]
-  Specificity assesses how well the model identifies actual absences (true negatives). A higher specificity means fewer false positives (wrongly predicted presences).
+\textbf{Specificity} assesses how well the model identifies actual absences (true negatives). A higher specificity means fewer false positives (wrongly predicted presences).
 
-- **Precision (Positive Predictive Value)**:
+- \uline{\textit{Precision or ppv (Positive Predictive Value)}}:
   \[
   \text{Precision} = \frac{TP}{TP + FP}
   \]
-  Precision measures the proportion of predicted presences that are true presences. A higher precision means that when the model predicts presence, it is more likely to be correct.
+\textbf{Precision} measures the proportion of predicted presences that are true presences. A higher precision means that when the model predicts presence, it is more likely to be correct.
 
-- **F1 Score**:
+- \uline{\textit{F1 Score}}:
   \[
   \text{F1 Score} = 2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}
   \]
-  The F1 score is the harmonic mean of precision and recall, giving a balanced measure of the model's accuracy when there is a trade-off between false positives and false negatives.
+The \textbf{F1} score is the harmonic mean of precision and recall, giving a balanced measure of the model's accuracy when there is a trade-off between false positives and false negatives.
 
+
+- \uline{\textit{Matthews Correlation Coefficient (MCC)}}:
+  \[
+  \text{MCC} = \frac{(TP \times TN) - (FP \times FN)}{\sqrt{(TP + FP)(TP + FN)(TN + FP)(TN + FN)}}
+  \]
+
+The \textbf{MCC} is a more balanced metric that considers all elements of the confusion matrix (TP, TN, FP, FN). It is particularly useful for imbalanced datasets, as it captures the relationship between true positives, true negatives, false positives, and false negatives. MCC ranges from -1 to 1, where 1 indicates perfect prediction, 0 means no better than random, and -1 means total disagreement between predictions and observations.
+
+- \uline{\textit{True Skill Statistic or TSS}}:
+  \[
+  \text{TSS} = \text{Sensitivity} + \text{Specificity} - 1
+  \]
+    \textbf{TSS} is a widely used metric which evaluates model performance by combining sensitivity and specificity into a single measure. TSS ranges from -1 to 1, where 1 indicates perfect prediction, 0 indicates no better than random, and negative values indicate performance worse than random.
+
+
+\textbf{Threshold Optimization}:
+
+As mentioned, predictions from SDMs (those that are developed using presence-absence data) are in the form of probability (that may be interpreted as habitat suitability). Since probability values are not comparable with observed Presence/Absences, a threshold is needed to convert the probability values to presence-absences. Then, the question is that what is the best threshold! A threshold optimization method may be used to find the best threshold given some criteria available for this purpose. In the sdm R package, 15 different criteria are available (it can be specified in different functions through using the `opt` argument; check the help page of the `evaluates` function for more information). Here is a list of some widely used methods: 
+
+For instance, we may find the threshold under which [sensitivity + specificity] is maximised (is known as: max[Se+Sp]).
+
+Threshold optimization is crucial when converting continuous model predictions (e.g., probabilities of species presence) into binary classifications (presence/absence). Several approaches can be used for threshold optimization:
+
+1) \uline{\textit{Se = Sp}}: This is one of the commonly used approach for threshold optimization, and it finds  the threshold where the sensitivity and specificity is equal. In the sdm package, this threshold can be used by setting `opt = 1`.
+
+2) \uline{\textit{max[Se + Sp]}}: The is probably the most widely used approach, and it is the threshold that maximizes [sensitivity + specificity] which is equivalent to maximizing TSS. In the sdm package, this threshold can be used by setting `opt = 2` (default).
+
+2) \uline{\textit{P10, P5, P1, and P0}}: These approached select the threshold based on percentile of probabilities across presence records in the evaluation dataset. P10, P5, P5, and P0 refer to 10, 5, 1, and 0 percentiles, respectively.
+
+
+\textbf{\large Threshold-independent metrics}
+
+The metrics mentioned so far are all threshold-based metrics, relying on finding the best threshold to first convert probability values to presence/absences, then creating a confusion matrix based on which multiple metrics can be calculated. Therefore, depending on which optimization approach is used, the metrics can vary. There is another group of metrics available to measure the performance of SDMs, with the advantage that there is no need to select a threshold. These threshold-independent metrics are often preferred when the goal is to evaluate the overall predictive ability of the model, regardless of specific classification cutoffs to convert probabilities to presence/absences.
+
+- \uline{\textit{Area Under the Receiver Operating Characteristic Curve (AUC)}}: 
+
+AUC (Area under the ROC curve) is probably the most widely used metric that measures the ability of SDMs to discriminate between presence and absence locations. AUC ranges between 0 and 1, with a value of 0.5 indicating a performance equivalent to random guessing, while values closer to 1 indicate better discriminative ability. AUC is calculated based on the ROC which plots the true positive rate (sensitivity) against the false positive rate (1-specificity) across all possible threshold values. AUC summarizes the curve into a single value, providing an overall assessment of model performance across thresholds.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\textwidth]{roc.png}
+    \caption{Two examples of ROC curve with corresponding AUC (area under the ROC curve) values; AUC is a metric assessing discriminative capacity of a model; the lower panel shows the density plots corresponding to the ROC curves in the upper panel, representing the distribution of predicted values across presence and absence locations in an evaluation (test) dataset; when AUC is greater, the model has greater power in discriminating presence locations from absence locations}
+    \label{fig:Fig4}
+\end{figure}
+
+- \uline{\textit{Correlation (COR)}}: 
+
+Correlation is another threshold-independent metric that assesses the agreement between predicted and observed values. The most common measure used is Pearson's correlation coefficient, which ranges from -1 to 1, with 1 showing a perfect positive correlation, 0 showing no correlation, and -1 representing perfect negative correlation.
+
+- \uline{\textit{Devience}}: 
+
+This metric represents the average deviation of model predictions from observations, therefore, a smaller value of it representing a better model (can be interpreted as smaller error).
+
+- \uline{\textit{Continuous Boyce Index (CBI)}}: 
+
+The Continuous Boyce Index (CBI) is an evaluation metric specifically designed for **presence-only** test dataset. It assesses how much better the predicted model is compared to a random model. CBI ranges from -1 to 1, where values close to 1 indicate a model with high predictive ability, 0 indicates no better than random, and negative values suggest the model is predicting worse than random.
+
+- \uline{\textit{Calibration}}:
+
+Calibration measures reliability of predicted probabilities related to observed species prevalence or proportion of presences across the range of probabilities predicted by a model.  If predictions are perfectly calibrated, we expect that the estimated probabilities represent the actual prevalence of data. For instance, across the sites with predicted probabiliy of 0.7, we expect 70% of observations are presence and 30% absence. The calibration metric is a novel method implemented in the sdm package to quantify the level of calibration, ranges between 0 and 1. A value of 1 refers to a perfect calibration and a value of 0.5 refers to the perfect discrimination (all observations greater than a threshold is presence, and below a threshold is absence). A negative value may also be generated for rare or not-likely situations such as generating opposite predictions (i.e., high probabilities for absences and low probabilities for presences). The following Figure shows a realistic calibration plot (on the left) with some extreme examples to show the range of calibration metrics (small plots on the right):
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\textwidth]{calibration.png}
+    \caption{The calibration plot with a novel metric developed in the sdm package representing the degree of calibration. The practical range is between 0.5 and 1.}
+    \label{fig:Fig5}
+\end{figure}
 
 
 
@@ -642,7 +726,13 @@ p
 # appropriate color schemes:
 cl <- colorRampPalette(c('gray','orange','yellow','green','blue')) 
 
-plot(p[[c(1,4,7,10,13)]],col=cl(200))
+## rasterVis for visualisation:
+# So far, we used the simple plot function to visualise rasters,
+# but with rasterVis, you may generate nicer plots:
+
+library(rasterVis)
+
+levelplot(p[[c(1,4,7,10,13)]],col.regions=cl(200),margin=F)
 
 
 ```
@@ -697,9 +787,10 @@ en3 <- ensemble(m, p, setting = list(method='pa', opt=2))
 
 
 en <- c(en1,en2,en3) # 3 objects stacked in a single object
+names(en) <- c('ens_AUC','ens_TSS','ens_PA')
 
-plot(en, col=cl(200),
-     main=c('Weighted-Mean (AUC)','Weighted-Mean (TSS)','Thresholding (PA)'))
+levelplot(en,col.regions=cl(200),margin=F,
+          main=c('Weighted-Mean (AUC)','Weighted-Mean (TSS)','Thresholding (PA)'))
 
 
 #-------------------------------
@@ -707,19 +798,23 @@ plot(en, col=cl(200),
 
 en4 <- ensemble(m, p, setting = list(method=c('mean','ci'), opt=2))
 
-plot(en4, col=cl(200),main=c('Mean','Range of Confidence-interval'))
+levelplot(en4,col.regions=cl(200),margin=F,
+          main=c('Mean','Range of Confidence-interval'))
 
 ## to assess the upper and lower limits of confidence intervals:
 ci.lower <- en4[[1]] - (en4[[2]] / 2)
 ci.upper <- en4[[1]] + (en4[[2]] / 2)
+ci <- c(ci.lower,ci.upper)
+names(ci) <- c('ci_lower','ci_upper')
 
-plot(c(ci.lower,ci.upper),main=c('CI.lower (alpha = 0.05)','CI.upper (alpha = 0.05)'))
+levelplot(ci,margin=F,
+          main=c('CI.lower (alpha = 0.05)','CI.upper (alpha = 0.05)'))
 
 #----------
 ## Uncertainty
 en5 <- ensemble(m, p, setting = list(method='uncertainty', opt=2))
 
-plot(en5, main='Model-based Uncertainty')
+levelplot(en5, margin=F, main='Model-based Uncertainty')
 
 #-----------
 
@@ -740,7 +835,402 @@ As you can see above, a single map is generated by combining the 15 predicted ra
 
 ### (v) Assessing range shifts of the species in response to climate change: 
 
+In this section, the models are used to generate the spatial distribution of species globally across time (i.e., for both the current and future periods). SDMs can project potential changes in species' geographic ranges by incorporating climate change scenarios (e.g., different future climate scenarios or SSPs). These projections allow researchers to estimate how a species' suitable habitat might shift under changing climate conditions.
+
+\uline{\textit{Key Considerations for Assessing Range Shifts:}}:
+
+
+a) **Baseline Distribution vs. Future Projections**: The first step in assessing range shifts involves comparing the baseline distribution of a species (i.e., its current range) with its projected distribution under future climate scenarios. These projections are typically made for various future time periods, such as 2050 or 2100 (here in this chapter, we only do it for the year 2100), based on different climate models (GCMs) and emission scenarios SSPs (Shared Socioeconomic Pathways). The difference between the two distributions highlights potential range expansions, contractions, or shifts.
+
+b) **Types of Range Shifts**:
+
+- **Latitudinal Shifts**: Species may shift pole-ward in response to rising temperatures. For example, species in the northern hemisphere may move northward, while those in the southern hemisphere might shift southward.
+
+- **Altitudinal Shifts**: As temperatures increase, species living in mountainous regions may move to higher elevations where cooler conditions prevail.
+
+- **Range Contractions**: Some species might experience range contractions due to unsuitable environmental conditions, leading to local **extinctions**.
+
+- **Range Expansions**: Conversely, some species may benefit from climate change, expanding (colonizing) into new areas that were previously too cold or otherwise unsuitable.
+
+c) **Metrics for Quantifying Range Shifts**:
+
+
+- **Magnitude of Change**: The change in the degree of suitability between the future and current times can be simply calculated as a map by subtracting the current probability from the future one. Each pixel shows the magnitude of gains (positive values) and losses (negative values) in the future. Visualising the map highlights areas where habitat suitability increases (gain), decreases (loss), or remains unchanged. This can help to visualize the areas most affected by climate change.
+     \[
+     \text{Magnitude of Change} = \text{Habitat Suitability in Future} - \text{Habitat Suitability in Current}
+     \]
+
+- **Assessing Expansion/Contraction**: By converting the habitat suitability values in both times to Presence/Absences, given a threshold, and comparing the values at each pixel, a pixel in future will be expanded (colonized) when species will be presence in the future while it is absence in the current time. Oppositely, the contraction (extinction) of a pixel in the future will be the case when species is presence in the current time wile it will become absence in the future.
+
+- **Centroid Shift**: The geographic centroid of the species' range is calculated for both the current and future projections. The distance and direction of the shift in the centroid can provide insight into whether the species is moving poleward, altitudinally, or in another direction. To calculate distance, we can use an Euclidean distance function (the coordinates should be metric):
+     \[
+     \text{Centroid shift} = \sqrt{(X_f - X_c)^2 + (Y_f - Y_c)^2}
+     \]
+     where \(X_f, Y_f\) represent the coordinates of the future centroid, and \(X_c, Y_c\) represent the current centroid coordinates.
+   
+- **Range Overlap**: The degree of overlap between the current and future predicted range can be used to assess how much of the species’ original habitat remains suitable under climate change. Low overlap indicates substantial changes in habitat suitability.
+     \[
+     \text{Range overlap (\%)} = \frac{\text{Area of overlap}}{\text{Current range area}} \times 100
+     \]
+     
+- **Range Area Change**: The change in the total area of suitable habitat is another key metric. This can be calculated by comparing the size of the species' predicted range in the future with its current range.
+     \[
+     \text{Range area change (\%)} = \frac{\text{Future range area} - \text{Current range area}}{\text{Current range area}} \times 100
+     \]
+     
+\uline{\textit{Assessing Range Shifts for our case study}}:
+
+For our case study, we have already fitted SDMs across a defined study area, but now we want to use these models to predict the potential distribution of the species **globally** for both the current and future times. We have already downloaded bioclimatic data for both the current period and future projections (year 2100 under the SSP585 scenario, which represents a high greenhouse gas emission scenario). This will allow us to assess how the species' range might shift under a potential future climate.
+
+**Area of applicability**: Given that the SDMs were initially fitted for a study area, which was a subset of the entire globe, predicting across the global scale can introduce new challenges. When applying these models globally, it is likely that some areas will exhibit environmental conditions that were not represented within the original study area. This phenomenon is referred to as environmental extrapolation. It can affect the reliability of predictions and should be carefully considered when interpreting the results. To handle this, we can identify and restrict our predictions to areas where the environmental conditions are within the area of applicability (AOA) of the model, meaning that the conditions are similar to those found within the training dataset. To calculate AOA, the `aoa` function in the sdm package can be used which generates a raster map with pixel values ranging between 0 and 1. A value of 1 means that the pixel is within the range used to fit the model. Deviating from 1 toward 0 refers to a more dissimilarity of the environmental condition of a pixel compared to the condition used to fit SDMs.
+
+Let's follow the range shift assessment globally step by step:
+
+
+```{r}
+## Predict spatial distribution for the current time (globally):
+
+# the model object: m, 
+# the global bioclim dataset for the current time: bio
+# the global bioclim dataset for the current time: biof
+
+#---> we directly use the ensemble (no need to first run predict function):
+#------> so, we use bio (predictors) as the second argument
+
+hc <- ensemble(m, bio, setting=list(method="weighted",stat="auc"))
+names(hc) <- 'Current'
+
+## Project spatial distribution to the future
+hf <- ensemble(m, biof, setting=list(method="weighted",stat="auc"))
+names(hf) <- 'Future'
+
+cl <- colorRampPalette(c('gray','orange','yellow','green','blue')) 
+
+
+levelplot(c(hc,hf),col.regions=cl(1000),margin=F)
+
+
+## Area of applicability:
+
+# to identify the unreliable pixels (check the Area of Applicability section):
+# The aoa function needs the following arguments:
+# ----> x: the raster predictors
+#-----> d: the output of sdmData (or sdmModels)
+#-----> vi: optional variable importance of the predictor variables
+
+#-- let's first extract variable importance from the variables:
+
+# in the id argument, we may specify modelIDs or "ensemble":
+vi <- getVarImp(m,id='ensemble')
+
+plot(vi)
+
+vi@varImportance$corTest
+
+vimp <- vi@varImportance$corTest # get the vector of importances
+
+ac <- aoa(bio, m, vi=vimp) # the output is the raster layer (current time)
 
 
 
+af <- aoa(biof, m, vi=vimp) # for the future
 
+# let's combine them into a single object for visualisation:
+a <- c(ac,af)
+names(a) <- c('AOA_current','AOA_future')
+
+levelplot(a,margin=F,par.settings = RdBuTheme)
+
+# the pixels less than 0.8 (or less than 1 to be conservative) are not reliable:
+
+# so, let's make a mask:
+
+acm <- ifel(ac >= 0.8,1, NA) # a mask to only keep reliable pixels (current time)
+afm <- ifel(af >= 0.8,1, NA) # a mask to only keep reliable pixels (future time)
+
+plot(acm,main='Mask of AoA for the current time')
+
+# let's adjust the predictions/projections (hc, and hf):
+
+hc <- mask(hc, acm) # exclude unreliable pixels for the current time
+hf <- mask(hf, afm) # exclude unreliable pixels for the current time
+
+levelplot(c(hc,hf),col.regions=cl(1000),margin=F)
+
+##-----------------------------------------------
+
+## Assess Magnitude of changes:
+
+# we can simply subtract current suitability from the future suitability:
+
+ch <- hf - hc
+
+cl2 <- colorRampPalette(c('black','darkred','red','orange',
+                          'yellow','gray','blue','darkblue'))
+
+levelplot(ch,col.regions=cl2(1000),margin=F,main='Magnitude of Gains/Losses')
+
+
+## Species range mapping and assess range shifts:
+
+# to map ranges, we can convert the habitat suitabilities to presence/absences (P/A)
+# the `pa` function can be used for this purpose:
+# pa uses a threshold to convert suitability values to P/As
+
+# to extract the threshold, we use the function of `threshold`:
+#--- Arguments of getThreshold:
+#------> x: sdmModels (m: output of the sdm function)
+#------> id: From which model the threshold is extracted (it can be 'ensemble')
+#------> opt: which threshold optimisation method should be considered
+#------> when id = "ensemble", we provide setting used for the ensemble function
+
+
+th <- getThreshold(m,id='ensemble',opt=2,setting=list(method='weighted',stat='auc'))
+
+th # the threshold to convert probability values to P/As using the `pa` function:
+
+#--- Arguments of pa:
+#------> x: raster of habitat suitability
+#------> y: threshold value
+
+pac <- pa(hc, th) # P/As for the current time (baseline)
+
+paf <- pa(hf, th) # P/As for the future time
+
+#-------------
+# let's visualise them:
+
+# defining a colorKey for the legend in map:
+colKey <- list(at=c(0,0.5,1), ## where the colors change in legend
+                   labels=list(
+                     at=c(0,1) ## where to print labels
+                   ))
+
+levelplot(c(pac,paf),col.regions=c('gray','green'),margin=F,colorkey=colKey)
+
+
+#-----------------------
+
+## Range shift metrics:
+
+# by subtracting the current P/As from the future one, we can get the following
+# values in the map:
+
+#--------------------------
+# Future - Current = Change
+#--------------------------
+#   1    -   0     = 1; Expansion (P in future; A in current)
+#   1    -   1     = 0; No Change; persistence (P in future; P in current)
+#   0    -   0     = 0; No Change; Unsuitable (A in; A in current)
+#   0    -   1     = -1; Contraction or Extinction (A in future; P in current)
+
+#---------------------------
+
+# As you can see above, No change in suitable and unsuitable sites can not be 
+# separated, a solution can be to change the 1/0 values in the future layer to 
+# a different value, e.g., 100/0 (so, presence sites in the future layer has a 
+# value of 100)! To do so, we can simply multiply paf to 100:
+
+paf2 <- paf * 100 
+
+# Now:
+#--------------------------
+# Future - Current = Change
+#--------------------------
+#   100   -   0    = 100; Expansion (P in future; A in current)
+#   100   -   1    = 99; No Change; Refugia (P in future; P in current)
+#   0     -   0    = 0; No Change; Unsuitable (A in; A in current)
+#   0     -   1    = -1; Contraction or Extinction (A in future; P in current)
+
+#---------------------------
+# so, we have 4 possible values representing range shifts
+
+pach <- paf2 - pac
+
+
+cls <- data.frame(id=c(-1,0,99,100), 
+                  range=c('Extinction', 'Unsuitable_NoChange', 
+                          'Refugia','Expansion'))
+
+levels(pach) <- cls
+
+
+levelplot(pach,att='range',col.regions=c('red','gray','green','blue'),margin=F)
+
+# Refugia is important for biodiversity conservation as it indicates potential 
+# locations for species to persist amid climate change, These locations enhance 
+# the likelihood of survival for species during climate shifts.
+
+##--------------------------------------
+
+## Metrics of Range Shift assessment:
+##----------------------------------
+
+# Here, we quantitatively assess range shifts:
+
+## Area of Contraction (Extinction) and Expansion (Colonization):
+# to calculate the area of the pixels representing either of the contraction
+# or expansion classes, we first need to identify the pixels of these classes
+
+# By multiplying the number of pixels of each class to the area/size of a pixel,
+# we may roughly estimate the area, however, since our dataset uses a lat/lon
+# coordinate reference system, the area of pixels are varying across latitudes,
+# therefore, we may first calculate the area of each pixel, and then use the areas
+# to calculate the size of contraction or expansion:
+
+# we can use the cellSize function to measure the size of pixels:
+area <- cellSize(pach, unit='km') # a raster with areas assigned to pixels
+
+# which cells belong to the class of contraction?
+# in pach, the value of -1 represents contraction (extinction):
+
+w1 <- which(pach[] == -1) # which cells in pach has the value of -1 (extinction)?
+
+head(w1) # w1 is a vector with cell numbers of pixels for the class of extinction
+
+sum(area[w1]) # Area of Extinction (km2) in the year 2100 based on SSP5 scenario!
+
+
+w2 <- which(pach[] == 100) # which cells in pach has the value of 100 (expansion)?
+
+sum(area[w2]) # Area of Expansion (km2) in the year 2100 based on SSP5 scenario!
+
+#############################
+## Calculate centroid shift:
+
+# to calculate centroid shift, we need to first calculate Xf,Xc, Yf, and Yc which 
+# are the mean X and Y (longitudes and latitudes) across pixels of species range 
+# in the Current (c) and Future times (f)
+
+# Let's first identify cells of species range for the current and future time
+
+# which pixels in pac (presence/ansence of current time) is equal to 1?
+Wc <- which(pac[] == 1) # pixel numbers of species range in the current time
+Wf <- which(paf[] == 1) # pixel number of species range in the future time
+
+XYc <- xyFromCell(pac, Wc)# X and Y coordinates of the current time across Wc cells
+XYf <- xyFromCell(paf, Wf)# X and Y coordinates of the future time across Wf cells
+
+
+head(XYc) # let's see how they look like
+
+Xc <- mean(XYc[,1],na.rm=T) # mean of the X column
+Yc <- mean(XYc[,2],na.rm=T) # mean of the Y column
+
+Xf <- mean(XYf[,1],na.rm=T) 
+Yf <- mean(XYf[,2],na.rm=T) 
+
+Xc
+Yc
+Xf
+Yf
+
+# We can calculate Euclidean distance to measure the shift distance between the 
+# future and  current times. However, since the coordinate reference system (CRS) 
+# of our layers is geographic, the coordinates of the centroids are also 
+# in the unit of decimal degrees (based on latlon CRS). To calculate distance in
+# meter, we can use the distGeo function from the package of geosphere 
+# to calculate metric distance between two points when they are in geographic 
+# coordinates.
+
+# To do so, first let's load the geosphere package (install it if you don't have it)
+library(geosphere)
+
+# distance between two points (centroids) based on their coordinates:
+dis <- distGeo(c(Xc,Yc),c(Xf,Yf)) / 1000 # divided by 1000 to get distance in KM
+
+
+dis
+
+## Direction of change:
+
+# we can use the bearing (from the geosphere package) function to get the 
+# azimut (direction) from the centroind of current time to the future:
+
+
+azimuth_deg <- bearing(c(Xc,Yc),c(Xf,Yf))
+
+# we can convert it to a range between 0 to 360 to get
+# a clockwise direction--> 0: north; 90: west, 180: south; 270: west; 360: north
+
+if (azimuth_deg < 0) azimuth_deg <- azimuth_deg + 360
+
+
+print(paste("Centroid shift distance:", round(dis, 2), "km"))
+print(paste("Direction of shift:", round(azimuth_deg, 2), "degrees"))
+
+
+
+## Latitudinal Shift and 
+##----------------------
+# we can simply measure the changes between the mean latitude of future (Yf)
+# and the mean latitude of the current time (Yc) to get an idea about the 
+# latitudinal shift:
+
+latitudinal_shift <- Yf - Yc
+
+if (latitudinal_shift > 0) {
+    direction <- "northward"
+} else if (latitudinal_shift < 0) {
+    direction <- "southward"
+} else {
+    direction <- "no change"
+}
+
+cat("The latitudinal shift is", abs(latitudinal_shift), "degrees,", direction, ".\n")
+
+
+## Range Area Change:
+##--------------------
+
+# Above we extracted the pixel number of species range in both times (Wc and Wf)
+# so, we can calculate the area of species range in both times which can be used
+# to calculate another metric of range shift assessment: "range area change"
+
+areaC <- sum(area[Wc]) # area of the species range in current time
+areaC
+
+areaF <- sum(area[Wf]) # area of the species range in Future
+areaF
+
+rangeCh <- ((areaF - areaC) / areaC) * 100
+rangeCh # percentage of range change 
+
+# as you can see, almost 26% contraction will be happening to species range in 
+# response to climate change (given the worst case scenario: SSP585)
+
+## Area of Overlap:
+##-----------------
+# Overlap refers to regions that are suitable in both times (refugia), 
+# We already mapped these areas in pach (value of 99), so let's get their pixel
+# number:
+
+wr <- which(pach[] == 99)
+
+areaR = sum(area[wr]) # Area (km2) of Refugia
+areaR
+
+ov <- (areaR / areaC) * 100
+
+ov # Area of overlap (precentage)
+```
+
+
+## Conclusion
+
+In this chapter, we have explored the comprehensive workflow for Species Distribution Modeling (SDM), focusing on the practical application of these models to assess the impacts of climate change on the distribution of species. Starting from downloading and preparing environmental and species occurrence data, to developing robust predictive models, and ultimately applying these models to analyze range shifts, we have highlighted the key methods, tools, and considerations needed to understand and predict how species respond to environmental changes.
+
+One of the core applications of SDM discussed here is the ability to predict current and future distributions of species under different climate scenarios. By comparing these distributions, we can assess **potential range shifts**—a crucial step in understanding species vulnerability, adaptation capacity, and potential future habitat availability. These range shifts are often characterized by latitudinal and altitudinal movements, range contractions, and expansions. Through the case study, we demonstrated how to utilize SDM techniques to analyze these shifts, providing valuable insights into the direction and extent of movement as well as the loss or gain of suitable habitats.
+
+Moreover, the chapter underscored the importance of identifying the **Area of Applicability (AOA)** when projecting species distributions globally. This step is critical to ensure that predictions are accurate and minimize the risks of making extrapolations into regions with unfamiliar environmental conditions. 
+
+Throughout this chapter, we used the `sdm` R package, a versatile tool that supports the modeling of SDMs and offers a wide range of functionalities for species distribution analysis. While we focused on specific aspects of the package, it has much more to explore, including advanced modeling options, evaluation metrics, and ensemble forecasting techniques. We encourage readers to refer to the standards and best practices for developing SDMs as outlined in Araújo et al. (2019), which provides comprehensive guidelines to ensure robust and reliable models (@araujo_standards_2019). Additionally, we recommend the `climetrics` R package (@taheri2024climetrics), which introduces functionalities to assess multiple dimensions of climate change. This package offers more possibilities to evaluate the impact of climate change on biodiversity, enabling researchers to capture a broader perspective on how changing climatic patterns may affect species distributions.
+
+Climate change represents one of the most significant drivers of biodiversity loss, and the application of SDMs offers a powerful approach to predict and mitigate its effects. Understanding potential range shifts enables conservationists, ecologists, and policymakers to make informed decisions about species management, habitat protection, and the development of wildlife corridors that enhance connectivity between fragmented habitats. By preparing for these shifts, we can better manage species’ resilience and adaptability, reducing the likelihood of local extinctions.
+
+Looking forward, there are several emerging techniques and future directions that can further enhance the utility of SDMs in climate change studies or for many other applications. These include the integration of biotic interactions (e.g., competition, predation, mutualism), land-use change variables, and incorporating genomic data to assess adaptive potential. Additionally, advances in machine learning and artificial intelligence offer new ways to develop more sophisticated models that can handle complex and dynamic ecological processes.
+
+In conclusion, species distribution modeling is a crucial tool in the fight against climate change and biodiversity loss. By accurately predicting the effects of environmental changes on species distributions, we can proactively implement strategies that conserve not only individual species but entire ecosystems. The knowledge and techniques presented in this chapter provide a solid foundation for conducting effective SDM analyses, and underscore the need for continued research, innovation, and collaboration across disciplines to address the multifaceted challenges that lie ahead.
+
+
+## References
