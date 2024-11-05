@@ -13,6 +13,7 @@ affiliation: |
 output: 
   pdf_document:
     latex_engine: xelatex
+    keep_tex: yes
 bibliography: citations.bib
 header-includes:
   - \usepackage{fontspec}
